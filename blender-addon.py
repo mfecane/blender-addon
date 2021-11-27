@@ -1,4 +1,5 @@
 import bpy
+from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
 
 ### SNIPPETS ###
 
@@ -49,12 +50,28 @@ class TweakCommand(bpy.types.Operator):
         # override_context['scene'] = bpy.context.scene
         # override_context['space_data'] = area.spaces.active
 
-        bpy.ops.wm.tool_set_by_id(name='builtin.select')
+        # bpy.ops.wm.tool_set_by_id(name='builtin.select')
         # list(override_context.workspace.tools)
 
-        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-        bpy.ops.wm.tool_set_by_id(name='builtin.select')
+        # bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        # bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
+        # bpy.ops.wm.tool_set_by_id(name='builtin.select')
+        # tool = bpy.context.workspace.tools.get('builtin.select')
+        # tool.mode = 'EDIT_MESH'
+
+        bpy.ops.wm.tool_set_by_id(name = "builtin.select_circle")
+        # Get the tool
+        tool = ToolSelectPanelHelper.tool_active_from_context(context)
+        props = tool.operator_properties('view3d.select_circle')
+
+        # Print all properties
+        print (dir(props))
+        # [...'mode', 'radius', 'rna_type', 'wait_for_input', 'x', 'y']
+        
+        # Set the properties
+        props.mode = 'SUB'
+        props.radius = 50
+
         # list(bpy.context.workspace.tools)
         return {'FINISHED'}
 
