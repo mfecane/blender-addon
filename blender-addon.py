@@ -1,5 +1,7 @@
 import bpy
 
+mfecane_keymaps = []
+
 class ObjectSelect(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "mfecane_tools.object_select"
@@ -125,8 +127,6 @@ class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
        row = layout.row()
        row.operator("mfecane_tools.tweak_command")
 
-mfecane_keymaps = []
-
 def disable_default_key(type=None, ctrl=False, retries=10):
     wm = bpy.context.window_manager
     
@@ -160,23 +160,37 @@ def setup_hotkeys():
 
         disable_default_key(type='Q')
         kmi = km.keymap_items.new(ObjectSelect.bl_idname, type='Q', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='W')
         kmi = km.keymap_items.new(MoveCommand.bl_idname, type='W', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='E')
         kmi = km.keymap_items.new(RotateCommand.bl_idname, type='E', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='R')
         kmi = km.keymap_items.new(ScaleCommand.bl_idname, type='R', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='T')
         kmi = km.keymap_items.new(TweakCommand.bl_idname, type='T', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='S')
         kmi = km.keymap_items.new(VertexSelect.bl_idname, type='S', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='D')
         kmi = km.keymap_items.new(EdgeSelect.bl_idname, type='D', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
         disable_default_key(type='F')
         kmi = km.keymap_items.new(FaceSelect.bl_idname, type='F', value='PRESS', ctrl=False)
-
         mfecane_keymaps.append((km, kmi))
 
+def remove_hotkeys():
+	wm = bpy.context.window_manager
+	kc = wm.keyconfigs.addon
+	if kc:
+		for km, kmi in mfecane_keymaps:
+			km.keymap_items.remove(kmi)
+	mfecane_keymaps.clear()
+        
 classes = [
     ObjectSelect,
     VertexSelect,
