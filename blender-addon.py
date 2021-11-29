@@ -97,6 +97,15 @@ class ScaleCommand(bpy.types.Operator):
         bpy.ops.wm.tool_set_by_id(name='builtin.scale')
         return {'FINISHED'}
 
+class LoopCutCommand(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "mfecane_tools.loop_cut_command"
+    bl_label = "Loop cut"
+    
+    def execute(self, context):
+        bpy.ops.wm.tool_set_by_id(name="builtin.loop_cut")
+        return {'FINISHED'}
+
 class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
    bl_label = "Mfecane toolset"
    bl_idname = "OBJECT_PT_Mfecane_tools"
@@ -126,8 +135,10 @@ class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
        row.operator("mfecane_tools.scale_command")
        row = layout.row()
        row.operator("mfecane_tools.tweak_command")
+       row = layout.row()
+       row.operator("mfecane_tools.loop_cut_command")
 
-def disable_default_key(type=None, ctrl=False, retries=10):
+def disable_default_key(type=None, ctrl=False, shift=False, retries=10):
     wm = bpy.context.window_manager
     
     if not type or retries < 1:
@@ -139,7 +150,7 @@ def disable_default_key(type=None, ctrl=False, retries=10):
     
     for km in km_list:
         for kmi in kc.keymaps[km].keymap_items:
-            if kmi.type == type:
+            if kmi.type == type: 
                 kmi.active = False
                 print("Disabled registered key: ", kmi.type, kmi.ctrl, "in", kc.keymaps[km].name)
                 return
@@ -148,7 +159,7 @@ def disable_default_key(type=None, ctrl=False, retries=10):
 
     # add some delay
     bpy.app.timers.register(
-        lambda: disable_default_key(type, ctrl, retries - 1),
+        lambda: disable_default_key(type, ctrl, shift, retries - 1),
         first_interval=0.1)
 
 def setup_hotkeys():
@@ -161,26 +172,37 @@ def setup_hotkeys():
         disable_default_key(type='Q')
         kmi = km.keymap_items.new(ObjectSelect.bl_idname, type='Q', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='W')
         kmi = km.keymap_items.new(MoveCommand.bl_idname, type='W', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='E')
         kmi = km.keymap_items.new(RotateCommand.bl_idname, type='E', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='R')
         kmi = km.keymap_items.new(ScaleCommand.bl_idname, type='R', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='T')
         kmi = km.keymap_items.new(TweakCommand.bl_idname, type='T', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='S')
         kmi = km.keymap_items.new(VertexSelect.bl_idname, type='S', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='D')
         kmi = km.keymap_items.new(EdgeSelect.bl_idname, type='D', value='PRESS', ctrl=False)
         mfecane_keymaps.append((km, kmi))
+
         disable_default_key(type='F')
         kmi = km.keymap_items.new(FaceSelect.bl_idname, type='F', value='PRESS', ctrl=False)
+        mfecane_keymaps.append((km, kmi))
+
+        disable_default_key(type='C', shift=True)
+        kmi = km.keymap_items.new(LoopCutCommand.bl_idname, type='C', value='PRESS', shift=True)
         mfecane_keymaps.append((km, kmi))
 
 def remove_hotkeys():
@@ -200,6 +222,7 @@ classes = [
     RotateCommand,
     ScaleCommand,
     TweakCommand,
+    LoopCutCommand,
     OBJECT_PT_Mfecane_tools,
 ]
 
