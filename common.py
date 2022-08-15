@@ -327,6 +327,9 @@ class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
         row.operator("mfecane_tools.sane_delete")
         row = layout.row()
         row.operator("mfecane_tools.snap_to_center_x")
+
+        row = layout.row()
+        row.label(text="Rigging", icon="NLA")
         row = layout.row()
         row.operator("mfecane_tools.copy_armature")
 
@@ -343,7 +346,7 @@ def print_kmi(km, kmi):
     print("")
 
 
-def disable_default_key(type=None, ctrl=False, shift=False, alt=False,  retries=5):
+def disable_default_key(type=None, ctrl=False, shift=False, alt=False,  retries=3):
     wm = bpy.context.window_manager
 
     if not type or retries < 1:
