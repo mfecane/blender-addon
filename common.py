@@ -140,8 +140,20 @@ class ExtrudeCommand(bpy.types.Operator):
     bl_label = "Extrude command"
 
     def execute(self, context):
-        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-        bpy.ops.view3d.edit_mesh_extrude_move_normal()
+
+        # print('context.object.type', context.object.type)
+        # print('context.mode', context.mode)
+
+        if context.object.type == 'ARMATURE' and context.mode == 'EDIT_ARMATURE':
+            # bpy.ops.armature.extrude_move()
+            bpy.ops.wm.tool_set_by_id(name='builtin.extrude')
+            return {'FINISHED'}
+
+        if context.object.type == 'MESH':
+            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            bpy.ops.view3d.edit_mesh_extrude_move_normal()
+            return {'FINISHED'}
+
         return {'FINISHED'}
 
 
@@ -226,6 +238,9 @@ class SaneDelete(bpy.types.Operator):
     def execute(self, context):
         if context.mode == 'OBJECT':
             bpy.ops.object.delete(use_global=False)
+            return {'FINISHED'}
+            
+        if context.object.type == 'ARMATURE':
             return {'FINISHED'}
 
         selectedFaces = [
@@ -332,6 +347,11 @@ class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
         row.label(text="Rigging", icon="NLA")
         row = layout.row()
         row.operator("mfecane_tools.copy_armature")
+        row = layout.row()
+        row.operator("mfecane_tools.fix_skeleton")
+        row = layout.row()
+        row.operator("mfecane_tools.clean_skeleton")
+
 
 
 def print_kmi(km, kmi):
