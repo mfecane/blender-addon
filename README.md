@@ -10,18 +10,50 @@
 
 # Snippets
 
-    if obj.type == 'MESH':
+        if obj.type == 'MESH':
 
-    # deleteList = [b for b in arm.data.edit_bones if b.name.startswith('DEF')]
-    # arm['selected_objects'] = deleteList
-    # arm.select_set(deleteList)
-    # bpy.ops.armature.delete()
 
-    # override = context.copy()
-    # override["selected_objects"] = list(context.scene.objects)
-    # with context.temp_override(**override):
-    #     bpy.ops.object.delete()
 
+        deleteList = [b for b in arm.data.edit_bones if b.name.startswith('DEF')]
+        arm['selected_objects'] = deleteList
+        arm.select_set(deleteList)
+        bpy.ops.armature.delete()
+
+        override = context.copy()
+        override["selected_objects"] = list(context.scene.objects)
+        with context.temp_override(**override):
+            bpy.ops.object.delete()
+
+
+
+
+        import bpy
+        from mathutils import *
+
+        def signed_angle(vector_u, vector_v, normal):
+            # Normal specifies orientation
+            angle = vector_u.angle(vector_v)
+            if vector_u.cross(vector_v).angle(normal) < 1:
+                angle = -angle
+            return angle
+
+        def get_pole_angle(base_bone, ik_bone, pole_location):
+            pole_normal = (ik_bone.tail - base_bone.head).cross(pole_location - base_bone.head)
+            projected_pole_axis = pole_normal.cross(base_bone.tail - base_bone.head)
+            return signed_angle(base_bone.x_axis, projected_pole_axis, base_bone.tail - base_bone.head)
+
+        base_bone = bpy.context.active_object.pose.bones["BASE_BONE_NAME"]
+        ik_bone = bpy.context.active_object.pose.bones["IK_BONE_NAME"]
+        pole_bone = bpy.context.active_object.pose.bones["POLE_BONE_NAME"]
+
+        pole_angle_in_radians = get_pole_angle(base_bone,
+                                            ik_bone,
+                                            pole_bone.matrix.translation)
+        pole_angle_in_deg = round(180*pole_angle_in_radians/3.141592, 3)
+        print(pole_angle_in_deg)
+
+
+        
 
 # Hotkeys
 
