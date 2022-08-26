@@ -13,8 +13,10 @@
 
 import bpy
 from . import auto_load
-from . import common
+from . import menu
+from . import setup
 from . import rigging
+from . import skeleton
 
 bl_info = {
     "name": "Mfecane tools",
@@ -30,7 +32,6 @@ auto_load.init()
 
 def register():
     auto_load.register()
-    common.setup_hotkeys()
     bpy.app.debug = True
 
 

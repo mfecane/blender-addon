@@ -6,6 +6,15 @@ import bmesh
 
 mfecane_keymaps = []
 
+class SetUp(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "mfecane_tools.set_up"
+    bl_label = "Set up"
+
+    def execute(self, context):
+        setup_hotkeys()
+        return {'FINISHED'}
+
 
 class ObjectSelect(bpy.types.Operator):
     """Tooltip"""
@@ -299,61 +308,6 @@ class SnapToCenterX(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
-    bl_label = "Mfecane toolset"
-    bl_idname = "OBJECT_PT_Mfecane_tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Mfecane toolset'
-
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row()
-        row.label(text="Manipulation", icon="CUBE")
-
-        row = layout.row()
-        row.operator("mfecane_tools.object_select")
-        row = layout.row()
-        row.operator("mfecane_tools.vertex_select")
-        row = layout.row()
-        row.operator("mfecane_tools.edge_select")
-        row = layout.row()
-        row.operator("mfecane_tools.face_select")
-        row = layout.row()
-        row.operator("mfecane_tools.move_command")
-        row = layout.row()
-        row.operator("mfecane_tools.rotate_command")
-        row = layout.row()
-        row.operator("mfecane_tools.scale_command")
-        row = layout.row()
-        row.operator("mfecane_tools.tweak_command")
-        row = layout.row()
-        row.operator("mfecane_tools.cut_command")
-        row = layout.row()
-        row.operator("mfecane_tools.loop_cut_command")
-        row = layout.row()
-        row.operator("mfecane_tools.subsurf1_command")
-        row = layout.row()
-        row.operator("mfecane_tools.subsurf2_command")
-        row = layout.row()
-        row.operator("mfecane_tools.subsurf3_command")
-        row = layout.row()
-        row.operator("mfecane_tools.sane_delete")
-        row = layout.row()
-        row.operator("mfecane_tools.snap_to_center_x")
-
-        row = layout.row()
-        row.label(text="Rigging", icon="NLA")
-        row = layout.row()
-        row.operator("mfecane_tools.copy_armature")
-        row = layout.row()
-        row.operator("mfecane_tools.fix_skeleton")
-        row = layout.row()
-        row.operator("mfecane_tools.clean_skeleton")
-        row = layout.row()
-        row.operator("mfecane_tools.test_pole")
-
 
 
 
@@ -377,7 +331,7 @@ def disable_default_key(type=None, ctrl=False, shift=False, alt=False,  retries=
 
     # the default keyconfig
     kc = wm.keyconfigs['Blender']
-    km_list = ["3D View", "3D View Generic", "Mesh", "Object Mode"]
+    km_list = ["3D View", "3D View Generic", "Mesh", "Object Mode", "Armature"]
     # , "Transform Modifier"
 
     success = False
