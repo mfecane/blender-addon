@@ -61,7 +61,7 @@ def prepare_skeleton(context):
     lower2.name = 'lower_arm_2'
 
 
-def fix_single_bone(arm, bone, parentTgt=None):
+def prepare_single_bone(arm, bone, parentTgt=None):
     # clean up name
     name = bone.name
     right = name.endswith('.R')
@@ -109,21 +109,79 @@ def fix_single_bone(arm, bone, parentTgt=None):
 
     # repeat
     for b in bone.children:
-        fix_single_bone(arm, b, eb)
+        prepare_single_bone(arm, b, eb)
 
 
-leg_rig_data = {
-    'bones': {}
-}
+def set_up_torso_rig(context):
+    arm = context.object
+    ebs = arm.data.edit_bones
+    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    
+    hips = getBone(context, 'TGT_hips')
+    spine = getBone(context, 'TGT_spine')
+    chest = getBone(context, 'TGT_chest')
+    root = getBone(context, 'TGT_root')
 
+    breast = getBone(context, 'TGT_breast.L')
+    breast.layers = getLayers([0, 1])
+
+    clavicle = getBone(context, 'TGT_clavicle.L')
+    clavicle.layers = getLayers([0, 1])
+
+    neck = getBone(context, 'TGT_neck.L')
+    neck.layers = getLayers([0, 1])
+
+    head = getBone(context, 'TGT_head.L')
+    head.layers = getLayers([0, 1])
+
+    ctrlTorso = ebs.new('CTRL_torso')
+    ctrlTorso.use_deform = False
+    ctrlTorso.use_connect = False
+    ctrlTorso.head = spine.head
+    ctrlTorso.tail = spine.head + Vector((0.0, 1.5, 0.0))
+    ctrlTorso.parent = root
+    ctrlTorso.layers = getLayers([0, 1])
+
+    ctrlHips = ebs.new('CTRL_hips')
+    ctrlHips.use_deform = False
+    ctrlHips.use_connect = False
+    ctrlHips.head = spine.head
+    ctrlHips.tail = hips.head
+    ctrlHips.parent = ctrlTorso
+    ctrlHips.layers = getLayers([0, 1])
+    hips.parent = ctrlHips
+
+    ctrlSpine = ebs.new('CTRL_spine')
+    ctrlSpine.use_deform = False
+    ctrlSpine.use_connect = False
+    ctrlSpine.head = spine.head
+    ctrlSpine.tail = chest.head
+    ctrlSpine.parent = ctrlTorso
+    ctrlSpine.layers = getLayers([0, 1])
+    
+    spine.use_connect = False
+    spine.parent = ctrlSpine
+    
+    bpy.ops.object.mode_set(mode='POSE', toggle=False)
+
+    ctrlSpine = getBone(context, 'CTRL_spine')
+    chest = getBone(context, 'TGT_chest')
+    
+    cpRotCstr1 = chest.constraints.new('COPY_ROTATION')
+    cpRotCstr1.target = arm
+    cpRotCstr1.subtarget = ctrlSpine.name
+    cpRotCstr1.target_space = 'LOCAL'
+    cpRotCstr1.owner_space = 'LOCAL'
+    
 
 def set_up_leg_rig(context):
     # TODO ensure bones
     arm = context.object
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
     ebs = arm.data.edit_bones
-    root = ebs['TGT_root']
-    ankle = ebs['TGT_ankle.L']
+
+    root = getBone(context, 'TGT_root')
+    ankle = getBone(context, 'TGT_ankle.L')
     upper_leg = ebs['TGT_upper_leg.L']
 
     ankle.use_inherit_rotation = False
@@ -511,7 +569,7 @@ class FixSkeleton(bpy.types.Operator):
                     rootBone = b
 
             arm.display_type = 'WIRE'
-            fix_single_bone(arm, rootBone)
+            prepare_single_bone(arm, rootBone)
 
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
             for boneName in rig_bones:
@@ -523,7 +581,8 @@ class FixSkeleton(bpy.types.Operator):
                 cstr.target = arm
                 cstr.subtarget = 'TGT_' + boneName
                 pass
-
+            
+            set_up_torso_rig(context)
             set_up_leg_rig(context)
             set_up_arm_rig(context)
             set_up_palm_rig(context)
