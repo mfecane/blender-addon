@@ -121,6 +121,7 @@ def set_up_torso_rig(context):
     spine = getBone(context, 'TGT_spine')
     chest = getBone(context, 'TGT_chest')
     root = getBone(context, 'TGT_root')
+    root.layers = getLayers([0, 1])
 
     breast = getBone(context, 'TGT_breast.L')
     breast.layers = getLayers([0, 1])
@@ -215,6 +216,7 @@ def set_up_leg_rig(context):
     ikLegTarget.head = upperLeg.tail - vec3 * 1.5
     ikLegTarget.tail = upperLeg.tail - vec3 * 2
     ikLegTarget.parent = root
+    ikLegTarget.layers = getLayers([0, 1])
 
     rollBone = ebs.new('MCH_foot_roll.L')
     rollBone.use_deform = False
@@ -256,6 +258,7 @@ def set_up_leg_rig(context):
 
     root = getBone(context, 'TGT_root')
     ankle = getBone(context, 'TGT_ankle.L')
+    toe = getBone(context, 'TGT_toe.L')
     upper_leg = getBone(context, 'TGT_upper_leg.L')
     lowerLeg = getBone(context, 'TGT_lower_leg.L')
     upperLeg = getBone(context, 'TGT_upper_leg.L')
@@ -311,11 +314,13 @@ def set_up_leg_rig(context):
     limitRotCstr2.max_x = 0
     limitRotCstr2.owner_space = 'LOCAL'
 
-
+    copyRotCstr4 = toe.constraints.new('COPY_ROTATION')
+    copyRotCstr4.target = arm
+    copyRotCstr4.subtarget = rollBone.name
+    copyRotCstr4.target_space = 'LOCAL'
+    copyRotCstr4.owner_space = 'LOCAL'
 
 def set_up_arm_rig(context):
-    # TODO ensure bones
-
     # EDIT MODE
 
     arm = context.object
@@ -355,10 +360,6 @@ def set_up_arm_rig(context):
     ikArmTarget.tail = upper.tail - vec3 * 2
     ikArmTarget.parent = root
 
-    # hand.use_connect = False
-    # change this
-    # hand.parent = ikArm
-
     # create ik chain
 
     upperIK = ebs.new('MCH_ik_upper_arm.L')
@@ -379,25 +380,6 @@ def set_up_arm_rig(context):
 
     hand.parent = lowerIK
     hand.use_connect = True
-    
-
-    # create intermediate bone on the ik chain end
-    # handIK = ebs.new('MCH_ik_hand.L')
-    # handIK.use_deform = False
-    # handIK.use_connect = True
-    # handIK.parent = lowerIK
-    # # handIK.head = lowerIK.tail
-    # vec = Vector((
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5, 
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5,
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5
-    # ))
-    # handIK.tail = Vector((
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5, 
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5,
-    #     lowerIK.tail[0] + (lowerIK.tail[0] - lowerIK.head[0]) * 0.5
-    # ))
-    # handIK.matrix = lowerIK.matrix.copy()
 
     # POSE MODE
 
@@ -539,11 +521,6 @@ def set_up_finger_rig(context, fingerIndex):
     ))
     ctrlFinger1.parent = hand
 
-    # bpy.ops.armature.select_all(action='DESELECT')
-    # arm.data.edit_bones.active = hand
-    # ctrlFinger1.select = True
-    # bpy.ops.armature.parent_set(type='OFFSET')
-
     # align selected bones to active bone
     bpy.ops.armature.select_all(action='DESELECT')
     arm.data.edit_bones.active = finger1
@@ -612,6 +589,86 @@ def set_up_hand_rig(context):
         set_up_finger_rig(context, fingerIndex)
 
 
+def add_groups(context):
+    arm = context.object
+    bpy.ops.object.mode_set(mode='POSE', toggle=False)
+
+    leftArmGrp = arm.pose.bone_groups.new(name='left_arm')
+    leftArmGrp.color_set = 'THEME01'
+    
+    rightArmGrp = arm.pose.bone_groups.new(name='right_arm')
+    rightArmGrp.color_set = 'THEME04'
+
+    for fingerIndex in ['a', 'b', 'c', 'd', 'e']:
+        bone = getBone(context, 'CTRL_finger_{}_1.L'.format(fingerIndex))
+        bone.bone_group = leftArmGrp
+        bone = getBone(context, 'CTRL_finger_{}_2.L'.format(fingerIndex))
+        bone.bone_group = leftArmGrp
+
+    bone = getBone(context, 'TGT_palm_a.L')
+    bone.bone_group = leftArmGrp
+    bone = getBone(context, 'MCH_ik_arm.L')
+    bone.bone_group = leftArmGrp
+    bone = getBone(context, 'TGT_clavicle.L')
+    bone.bone_group = leftArmGrp
+    bone = getBone(context, 'MCH_ik_arm_target.L')
+    bone.bone_group = leftArmGrp
+
+    for fingerIndex in ['a', 'b', 'c', 'd', 'e']:
+        bone = getBone(context, 'CTRL_finger_{}_1.R'.format(fingerIndex))
+        bone.bone_group = rightArmGrp
+        bone = getBone(context, 'CTRL_finger_{}_2.R'.format(fingerIndex))
+        bone.bone_group = rightArmGrp
+
+    bone = getBone(context, 'TGT_palm_a.R')
+    bone.bone_group = rightArmGrp
+    bone = getBone(context, 'MCH_ik_arm.R')
+    bone.bone_group = rightArmGrp
+    bone = getBone(context, 'TGT_clavicle.R')
+    bone.bone_group = rightArmGrp
+    bone = getBone(context, 'MCH_ik_arm_target.R')
+    bone.bone_group = rightArmGrp
+
+    leftLegGrp = arm.pose.bone_groups.new(name='left_leg')
+    leftLegGrp.color_set = 'THEME01'
+
+    bone = getBone(context, 'MCH_ik_leg.L')
+    bone.bone_group = leftLegGrp
+    bone = getBone(context, 'CTRL_foot_roll.L')
+    bone.bone_group = leftLegGrp
+    bone = getBone(context, 'MCH_ik_leg_target.L')
+    bone.bone_group = leftLegGrp
+    
+    rightLegGrp = arm.pose.bone_groups.new(name='right_leg')
+    rightLegGrp.color_set = 'THEME04'
+
+    bone = getBone(context, 'MCH_ik_leg.R')
+    bone.bone_group = rightLegGrp
+    bone = getBone(context, 'CTRL_foot_roll.R')
+    bone.bone_group = rightLegGrp
+    bone = getBone(context, 'MCH_ik_leg_target.R')
+    bone.bone_group = rightLegGrp
+    
+    torsoGroup = arm.pose.bone_groups.new(name='torso')
+    torsoGroup.color_set = 'THEME03'
+
+    bone = getBone(context, 'CTRL_hips')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'CTRL_spine')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'CTRL_torso')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'TGT_neck')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'TGT_head')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'TGT_breast.L')
+    bone.bone_group = torsoGroup
+    bone = getBone(context, 'TGT_breast.R')
+    bone.bone_group = torsoGroup
+
+
+
 class FixSkeleton(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "mfecane_tools.fix_skeleton"
@@ -664,6 +721,10 @@ class FixSkeleton(bpy.types.Operator):
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize()
 
+            add_groups(context)
+
+            # TODO fix deform in one function
+
             # test
 
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
@@ -698,23 +759,27 @@ class CleanUp(bpy.types.Operator):
             arm = context.object
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
-            # deleteList = [b for b in arm.data.edit_bones if b.name.startswith('DEF')]
-            # arm['selected_objects'] = deleteList
-            # arm.select_set(deleteList)
-            # bpy.ops.armature.delete()
-
-            # override = context.copy()
-            # override["selected_objects"] = list(context.scene.objects)
-            # with context.temp_override(**override):
-            #     bpy.ops.object.delete()
-
             for b in arm.data.edit_bones:
-                if b.name.startswith('TGT'):
+                if b.name.startswith('TGT') or b.name.startswith('CTRL') or b.name.startswith('MCH'):
                     arm.data.edit_bones.remove(b)
                     continue
+
+                if b.name.startswith('DEF') and b.name.endswith('.R'):
+                    arm.data.edit_bones.remove(b)
+                    continue
+
+                b.name = b.name.lstrip('DEF_')
                 b.name = b.name.lstrip('TGT_')
                 b.name = b.name.rstrip('.L')
                 b.name = b.name.rstrip('.R')
+
+        bpy.ops.object.mode_set(mode='POSE', toggle=False)
+        arm.data.layers = [n == 0 or n == 1 for n in range(0, 32)]
+
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        
+        # TODO: remove groups
+        # TODO: join arm?
 
         return {'FINISHED'}
 
