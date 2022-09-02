@@ -1,6 +1,7 @@
+from cmath import pi
 import bpy
 from math import (
-    pi as PI,
+    pi as PI, atan2
 )
 from mathutils import Vector
 
@@ -15,7 +16,6 @@ rigging_settings = {
 }
 
 rig_bones = []
-
 
 def getBone(context, name):
     arm = context.object
@@ -128,10 +128,10 @@ def set_up_torso_rig(context):
     clavicle = getBone(context, 'TGT_clavicle.L')
     clavicle.layers = getLayers([0, 1])
 
-    neck = getBone(context, 'TGT_neck.L')
+    neck = getBone(context, 'TGT_neck')
     neck.layers = getLayers([0, 1])
 
-    head = getBone(context, 'TGT_head.L')
+    head = getBone(context, 'TGT_head')
     head.layers = getLayers([0, 1])
 
     ctrlTorso = ebs.new('CTRL_torso')
@@ -175,31 +175,32 @@ def set_up_torso_rig(context):
     
 
 def set_up_leg_rig(context):
-    # TODO ensure bones
     arm = context.object
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
     ebs = arm.data.edit_bones
 
     root = getBone(context, 'TGT_root')
     ankle = getBone(context, 'TGT_ankle.L')
-    upper_leg = ebs['TGT_upper_leg.L']
+    upper_leg = getBone(context, 'TGT_upper_leg.L')
+    lowerLeg = getBone(context, 'TGT_lower_leg.L')
+    upperLeg = getBone(context, 'TGT_upper_leg.L')
 
-    ankle.use_inherit_rotation = False
 
     # create IK bone
+    
     ikLeg = ebs.new('MCH_ik_leg.L')
     ikLeg.use_deform = False
     ikLeg.use_connect = False
-    ikLeg.head = ankle.head
-
-    # TODO fix align
-    ikLeg.tail = Vector(
-        (ankle.head[0], ankle.head[1] + MCH_BONE_SIZE, ankle.head[2]))
     ikLeg.parent = root
+    ikLeg.head = ankle.head
+    vec = ankle.tail - ankle.head
+    vec.normalize()
+    ikLeg.head = ankle.head
+    ikLeg.tail = ankle.head + vec * 0.4
+    alignBone(context, ankle, ikLeg)
+    ikLeg.layers = getLayers([0, 1])
 
     # create target
-    lowerLeg = arm.data.edit_bones['TGT_lower_leg.L']
-    upperLeg = arm.data.edit_bones['TGT_upper_leg.L']
 
     vec1 = lowerLeg.tail - lowerLeg.head
     vec1.normalize()
@@ -215,30 +216,101 @@ def set_up_leg_rig(context):
     ikLegTarget.tail = upperLeg.tail - vec3 * 2
     ikLegTarget.parent = root
 
+    rollBone = ebs.new('MCH_foot_roll.L')
+    rollBone.use_deform = False
+    rollBone.use_connect = False
+    rollBone.parent = root
+    rollBone.head = ankle.tail
+    vec = ankle.tail - ankle.head
+    vec[2] = 0.0
+    rollBone.tail = ankle.tail - vec * 1.3
+    rollBone.tail[2] = 0.0
+    angle = atan2(vec[0], -vec[1])
+    print('roll angle', angle)
+
+    rollBone2 = ebs.new('MCH_foot_roll_2.L')
+    rollBone2.use_deform = False
+    rollBone2.use_connect = False
+    rollBone2.parent = root
+    rollBone2.head = rollBone.tail
+    rollBone2.tail = rollBone.tail + Vector((0.0, 0.0, 0.5))
+    rollBone2.roll = angle 
+
+    ctrlRoll = ebs.new('CTRL_foot_roll.L')
+    ctrlRoll.use_deform = False
+    ctrlRoll.use_connect = False
+    ctrlRoll.parent = root
+    ctrlRoll.head = rollBone.tail - vec * 1.0
+    ctrlRoll.head[2] = 0.0
+    ctrlRoll.tail = rollBone.tail - vec * 1.0
+    ctrlRoll.tail[2] = 0.5
+    ctrlRoll.layers = getLayers([0, 1])
+
+    alignBone(context, rollBone2, ctrlRoll)
+
+    ikLeg.parent = rollBone
+    rollBone.parent = rollBone2
+
     # IK constraint
     bpy.ops.object.mode_set(mode='POSE', toggle=False)
-    lowerLeg = arm.pose.bones['TGT_lower_leg.L']
 
-    ikLeg = arm.pose.bones['MCH_ik_leg.L']
+    root = getBone(context, 'TGT_root')
+    ankle = getBone(context, 'TGT_ankle.L')
+    upper_leg = getBone(context, 'TGT_upper_leg.L')
+    lowerLeg = getBone(context, 'TGT_lower_leg.L')
+    upperLeg = getBone(context, 'TGT_upper_leg.L')
+    ikLeg = getBone(context, 'MCH_ik_leg.L')
+    ikTarget = getBone(context, 'MCH_ik_leg_target.L')
+    rollBone = getBone(context, 'MCH_foot_roll.L')
+    rollBone2 = getBone(context, 'MCH_foot_roll_2.L')
+    ctrlRoll = getBone(context, 'CTRL_foot_roll.L')
+
+    ctrlRoll.rotation_mode = 'XYZ'
+    ctrlRoll.lock_rotation[1] = True
+    ctrlRoll.lock_rotation[2] = True
+
     ikCstr = lowerLeg.constraints.new('IK')
     ikCstr.target = arm
-    ikCstr.subtarget = 'MCH_ik_leg.L'
+    ikCstr.subtarget = ikLeg.name
     ikCstr.chain_count = 2
     ikCstr.pole_target = arm
-    ikCstr.pole_subtarget = 'MCH_ik_leg_target.L'
+    ikCstr.pole_subtarget = ikTarget.name
     ikCstr.pole_angle = PI / 2.0
 
     # lock unwanted axii
     lowerLeg.lock_ik_y = True
     lowerLeg.lock_ik_z = True
 
-    ankle = arm.pose.bones['TGT_ankle.L']
     copyRotCstr = ankle.constraints.new('COPY_ROTATION')
     copyRotCstr.target = arm
-    copyRotCstr.subtarget = 'MCH_ik_leg.L'
-    copyRotCstr.invert_x = True
-    copyRotCstr.target_space = 'LOCAL'
-    copyRotCstr.owner_space = 'LOCAL'
+    copyRotCstr.subtarget = ikLeg.name
+    copyRotCstr.target_space = 'WORLD'
+    copyRotCstr.owner_space = 'WORLD'
+
+    copyRotCstr2 = rollBone.constraints.new('COPY_ROTATION')
+    copyRotCstr2.target = arm
+    copyRotCstr2.subtarget = ctrlRoll.name
+    copyRotCstr2.target_space = 'LOCAL'
+    copyRotCstr2.owner_space = 'LOCAL'
+
+    limitRotCstr = rollBone.constraints.new('LIMIT_ROTATION')
+    limitRotCstr.use_limit_x = True
+    limitRotCstr.min_x = 0
+    limitRotCstr.max_x = PI/2
+    limitRotCstr.owner_space = 'LOCAL'
+
+    copyRotCstr3 = rollBone2.constraints.new('COPY_ROTATION')
+    copyRotCstr3.target = arm
+    copyRotCstr3.subtarget = ctrlRoll.name
+    copyRotCstr3.target_space = 'LOCAL'
+    copyRotCstr3.owner_space = 'LOCAL'
+
+    limitRotCstr2 = rollBone2.constraints.new('LIMIT_ROTATION')
+    limitRotCstr2.use_limit_x = True
+    limitRotCstr2.min_x = -PI/2
+    limitRotCstr2.max_x = 0
+    limitRotCstr2.owner_space = 'LOCAL'
+
 
 
 def set_up_arm_rig(context):
@@ -592,8 +664,26 @@ class FixSkeleton(bpy.types.Operator):
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize()
 
+            # test
+
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.ops.object.select_all(action='DESELECT') 
+            mesh = bpy.data.objects['basemesh.002']
+            mesh.select_set(True)
+            arm.select_set(True)
+            bpy.context.view_layer.objects.active = arm 
+            bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+
+            bpy.ops.object.select_all(action='DESELECT') 
+            arm.select_set(True)
+            bpy.context.view_layer.objects.active = arm 
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
-            arm.data.layers = [n == 0 or n == 1 for n in range(0, 32)]
+
+            # turn on all layers
+            # arm.data.layers = [n == 0 or n == 1 for n in range(0, 32)]
+            
+            # turn on only ctrl layer
+            arm.data.layers = [n == 1 for n in range(0, 32)]
 
         return {'FINISHED'}
 
