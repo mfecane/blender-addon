@@ -49,7 +49,7 @@ def alignBone(context, srcBone, tgtBone):
     bpy.ops.armature.select_all(action='DESELECT')
 
 
-def prepare_skeleton(context):
+def subdivide_arm_bone(context):
 
     # subdivide arm bones
     selectBone(context, 'lower_arm')
@@ -320,7 +320,86 @@ def set_up_leg_rig(context):
     copyRotCstr4.target_space = 'LOCAL'
     copyRotCstr4.owner_space = 'LOCAL'
 
+
 def set_up_arm_rig(context):
+    # EDIT MODE
+
+    arm = context.object
+    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    ebs = arm.data.edit_bones
+    root = getBone(context, 'TGT_root')
+    clavicle = getBone(context, 'TGT_clavicle.L')
+    upper = getBone(context, 'TGT_upper_arm.L')
+    lower = getBone(context, 'TGT_lower_arm.L')
+    hand = getBone(context, 'TGT_hand.L')
+
+    # create IK bone
+    # TODO important! align this bone
+    ikArm = ebs.new('MCH_ik_arm.L')
+    ikArm.use_connect = False
+    ikArm.parent = root
+    ikArm.use_deform = False
+    vec = hand.tail - hand.head
+    vec.normalize()
+    ikArm.head = hand.head
+    ikArm.tail = hand.head + vec * 0.4
+    alignBone(context, hand, ikArm)
+
+    # create target
+    vec1 = lower.tail - lower.head
+    vec1.normalize()
+    vec2 = upper.head - upper.tail
+    vec2.normalize()
+    vec3 = vec1 + vec2
+    vec3.normalize()
+
+    ikArmTarget = ebs.new('MCH_ik_arm_target.L')
+    ikArmTarget.use_deform = False
+    ikArmTarget.use_connect = False
+    ikArmTarget.head = upper.tail - vec3 * 1.5
+    ikArmTarget.tail = upper.tail - vec3 * 2
+    ikArmTarget.parent = root
+
+    # POSE MODE
+
+    bpy.ops.object.mode_set(mode='POSE', toggle=False)
+
+    ikArm = getBone(context, 'MCH_ik_arm.L')
+    ikArmTarget = getBone(context, 'MCH_ik_arm_target.L')
+
+    upper = getBone(context, 'TGT_upper_arm.L')
+    lower = getBone(context, 'TGT_lower_arm.L')
+    hand = getBone(context, 'TGT_hand.L')
+
+    ikArmTarget.bone.layers = getLayers([0, 1])
+    
+    # IK constraint
+
+    ikCstr = lower.constraints.new('IK')
+    ikCstr.target = arm
+    ikCstr.subtarget = ikArm.name
+    ikCstr.chain_count = 2
+    ikCstr.pole_target = arm
+    ikCstr.pole_subtarget = 'MCH_ik_arm_target.L'
+    ikCstr.pole_angle = -PI / 2.0
+
+    ikArm.bone.layers = getLayers([0, 1])
+
+    # lock unwanted axii
+
+    lower.lock_ik_y = True
+    lower.lock_ik_z = True
+
+    # constraint lower arm
+
+    cpRotCstr2 = hand.constraints.new('COPY_ROTATION')
+    cpRotCstr2.target = arm
+    cpRotCstr2.subtarget = ikArm.name
+    cpRotCstr2.target_space = 'WORLD'
+    cpRotCstr2.owner_space = 'WORLD'
+
+
+def set_up_complex_arm_rig(context):
     # EDIT MODE
 
     arm = context.object
@@ -386,7 +465,6 @@ def set_up_arm_rig(context):
     bpy.ops.object.mode_set(mode='POSE', toggle=False)
 
     upperIk = getBone(context, 'MCH_ik_upper_arm.L')
-    lowerIk = getBone(context, 'MCH_ik_lower_arm.L')
     lowerIk = getBone(context, 'MCH_ik_lower_arm.L')
     ikArm = getBone(context, 'MCH_ik_arm.L')
     ikArmTarget = getBone(context, 'MCH_ik_arm_target.L')
@@ -683,7 +761,8 @@ class FixSkeleton(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
             arm.data.show_axes = True
 
-            prepare_skeleton(context)
+            # for complex arm rig
+            # subdivide_arm_bone(context)
 
             # get root bone
             rootBone = None
