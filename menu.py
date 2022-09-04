@@ -55,3 +55,5 @@ class OBJECT_PT_Mfecane_tools(bpy.types.Panel):
         row.operator("mfecane_tools.clean_skeleton")
         row = layout.row()
         row.operator("mfecane_tools.test_pole")
+        row = layout.row()
+        row.operator("mfecane_tools.export_fbx")

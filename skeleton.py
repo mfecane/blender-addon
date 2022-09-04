@@ -7,13 +7,19 @@ from mathutils import Vector
 
 MCH_BONE_SIZE = 0.4
 
-bones = []
-
-rigging_settings = {
+config = {
     'symmetrize': {
         'clavicle', 'upper_arm', 'lower_arm', 'hand', 'palm', 'finger', 'pelvis', 'upper_leg', 'lower_leg', 'ankle', 'toe', 'breast'
+    },
+    # What to export to FBX?
+    'export': {
+        'file': 'D:/gamedev/My project/Assets/Character/test-anim-run.fbx',
+        'armature': 'Armature',
+        'mesh': 'body'
     }
 }
+
+bones = []
 
 rig_bones = []
 
@@ -74,7 +80,7 @@ def prepare_single_bone(arm, bone, parentTgt=None):
 
     cleanName = bone.name.lstrip('DEF_').rstrip('.L').rstrip('.R')
 
-    for sym in rigging_settings['symmetrize']:
+    for sym in config['symmetrize']:
         if sym in cleanName and not right and not left:
             left = True
             suffix = '.L'
@@ -577,8 +583,6 @@ def set_up_palm_rig(context):
 
 
 def set_up_finger_rig(context, fingerIndex):
-    # print('fingerIndex', fingerIndex)
-
     arm = context.object
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
     ebs = arm.data.edit_bones
@@ -793,7 +797,8 @@ class FixSkeleton(bpy.types.Operator):
             set_up_torso_rig(context)
             set_up_leg_rig(context)
             set_up_arm_rig(context)
-            set_up_palm_rig(context)
+            # disable for now
+            # set_up_palm_rig(context)
             set_up_hand_rig(context)
 
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
@@ -808,7 +813,7 @@ class FixSkeleton(bpy.types.Operator):
 
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
             bpy.ops.object.select_all(action='DESELECT') 
-            mesh = bpy.data.objects['basemesh.002']
+            mesh = bpy.data.objects[config['export']['mesh']]
             mesh.select_set(True)
             arm.select_set(True)
             bpy.context.view_layer.objects.active = arm 
@@ -892,5 +897,34 @@ class TestPole(bpy.types.Operator):
             test3 = ebs.new('delete_me')
             test3.head = bone1.tail
             test3.tail = bone1.tail + vec3
+
+        return {'FINISHED'}
+
+
+class ExportFBX(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "mfecane_tools.export_fbx"
+    bl_label = "Export FBX"
+
+    def execute(self, context):
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        bpy.ops.object.select_all(action='DESELECT') 
+
+        mesh = bpy.data.objects[config['export']['mesh']]
+        mesh.select_set(True)
+
+        arm = bpy.data.objects[config['export']['armature']]
+        arm.select_set(True)
+
+        bpy.ops.export_scene.fbx(
+            filepath=config['export']['file'], check_existing=True, filter_glob='*.fbx', use_selection=True, use_visible=False, 
+            use_active_collection=False, global_scale=1.0, apply_unit_scale=True, apply_scale_options='FBX_SCALE_NONE', 
+            use_space_transform=True, bake_space_transform=False, object_types={'ARMATURE', 'MESH'}, 
+            use_mesh_modifiers=True, use_mesh_modifiers_render=True, mesh_smooth_type='OFF', use_subsurf=False, use_mesh_edges=False, 
+            use_tspace=False, use_triangles=False, use_custom_props=False, add_leaf_bones=False, primary_bone_axis='Y', 
+            secondary_bone_axis='X', use_armature_deform_only=True, armature_nodetype='NULL', bake_anim=True, 
+            bake_anim_use_all_bones=True, bake_anim_use_nla_strips=True, bake_anim_use_all_actions=True, bake_anim_force_startend_keying=True, 
+            bake_anim_step=1.0, bake_anim_simplify_factor=1.0, path_mode='AUTO', embed_textures=False, batch_mode='OFF', 
+            use_batch_own_dir=True, use_metadata=True, axis_forward='-Z', axis_up='Y')
 
         return {'FINISHED'}
