@@ -12,6 +12,16 @@ class SetUp(bpy.types.Operator):
     bl_label = "Set up"
 
     def execute(self, context):
+        bpy.context.space_data.shading.light = 'MATCAP'
+        bpy.context.space_data.shading.show_shadows = True
+        bpy.context.space_data.shading.show_cavity = True
+        bpy.context.space_data.shading.cavity_type = 'BOTH'
+        bpy.context.space_data.shading.cavity_ridge_factor = 0.6
+        bpy.context.space_data.shading.curvature_ridge_factor = 0.4
+        bpy.context.space_data.shading.curvature_valley_factor = 0.6
+        bpy.context.space_data.shading.cavity_valley_factor = 0.4
+        print('I shat my pants')
+
         setup_hotkeys()
         return {'FINISHED'}
 
