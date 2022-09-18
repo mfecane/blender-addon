@@ -83,3 +83,9 @@ bpy.ops.armature.extrude_move(ARMATURE_OT_extrude={"forked":False}, TRANSFORM_OT
 
 
         bpy.context.view_layer.objects.active = mesh 
+
+copy objects
+
+        mesh2 = mesh.copy()
+        mesh2.data = mesh2.data.copy()
+        context.collection.objects.link(mesh2)
