@@ -16,6 +16,7 @@ from . import auto_load
 from . import menu
 from . import setup
 from . import rigging
+from . import tentacle
 from . import skeleton
 
 bl_info = {
